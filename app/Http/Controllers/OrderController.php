@@ -6,10 +6,13 @@ use App\Contracts\Repositories\OrderDetailRepository;
 use App\Contracts\Repositories\OrderRepository;
 use App\Contracts\Repositories\UserRepository;
 use App\Http\Requests\Order\StoreRequest;
+use App\Http\Resources\OrderCollection;
+use App\Http\Resources\OrderResource;
 use App\Mail\OrderUser;
 use App\Models\Order;
 use App\Notifications\OrderAdminNotification;
 use Exception;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -182,5 +185,27 @@ class OrderController extends Controller
             DB::rollBack();
             Log::error($ex);
         }
+    }
+
+    public function getApiAllOrder()
+    {
+        if (Auth::user()->tokenCan('admin:view')) {
+            $orders = $this->orderRepository->getAllOrders();
+
+            return new OrderCollection($orders, __FUNCTION__);
+        }
+
+        return new OrderCollection([], __FUNCTION__, 'Unauthorize');
+    }
+
+    public function getApiDetailsOrder($id)
+    {
+        $orderDetails = $this->orderDetailRepository->showDetailsOrders($id);
+        $user = Auth::user();
+        if ($user->tokenCan('admin:view') || $user->id == $orderDetails[0]->order->user_id) {
+            return new OrderResource($orderDetails, __FUNCTION__);
+        }
+
+        return new OrderResource([], __FUNCTION__, 'Unauthorize');
     }
 }

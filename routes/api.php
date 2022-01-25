@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\OrderController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -13,7 +15,10 @@ use Illuminate\Support\Facades\Route;
 | is assigned the "api" middleware group. Enjoy building your API!
 |
 */
+Route::post('login', [AuthenticatedSessionController::class, 'apiLogin']);
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
+Route::group(['middleware' => 'auth:sanctum'], function () {
+    Route::get('orders/{id}', [OrderController::class, 'getApiDetailsOrder']);
+    Route::get('admin/orders', [OrderController::class, 'getApiAllOrder']);
+    Route::post('logout', [AuthenticatedSessionController::class, 'apiLogout']);
 });
