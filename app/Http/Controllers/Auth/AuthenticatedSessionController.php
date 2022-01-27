@@ -59,4 +59,32 @@ class AuthenticatedSessionController extends Controller
 
         return redirect()->intended(RouteServiceProvider::HOME);
     }
+
+    public function apiLogin(LoginRequest $request)
+    {
+        $credentials = $request->only(['email', 'password']);
+
+        if (!Auth::attempt($credentials)) {
+            return response()->json([
+                'message' => 'Login Fail',
+            ]);
+        }
+
+        $user = Auth::user();
+
+        if ($user->role_id == config('const.admin')) {
+            $token = $user->createToken($request->device, ['admin:view']);
+        } else {
+            $token = $user->createToken($request->device);
+        }
+
+        $user->token = $token->plainTextToken;
+
+        return response()->json($user);
+    }
+
+    public function apiLogout()
+    {
+        auth()->user()->currentAccessToken()->delete();
+    }
 }
